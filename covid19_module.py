@@ -70,3 +70,13 @@ def fit_cases_data(country, df):
     plt.legend()
     #plt.yscale('log')
     plt.show()
+
+def plot_daily_vs_total(df, country):
+    daily_column = np.append([0], df[country].iloc[0:-1])
+    df["daily"] = df[country]-daily_column
+    plt.plot(df[country], df["daily"], ".-", label=country)
+    plt.xlabel("number of total cases")
+    plt.ylabel("number of daily cases")
+    plt.yscale("log")
+    plt.xscale("log")
+    plt.legend()
