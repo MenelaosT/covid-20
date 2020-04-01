@@ -75,6 +75,9 @@ def fit_cases_data(country, df):
 def sigmoid(x, x0, k, a, c):
     return (a / (1 + np.exp(-k*(x-x0)))) + c
 
+def gauss(x, a, x0, sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
 def fit_cases_data_sigmoid(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
@@ -100,6 +103,29 @@ def fit_cases_data_sigmoid(country, df):
     plt.legend()
     #plt.yscale('log')
     plt.show()
+
+def add_daily_entries(df):
+    df_daily_entries = df.copy()
+    for country in df.columns:
+        if country != "Date" and country != "Day":
+            daily_column = np.append([0], df[country].iloc[0:-1])
+            df_daily_entries["daily "+country] = df[country]-daily_column
+    return df_daily_entries
+
+def fit_normal(df, country):
+    x = np.linspace(0, df["daily "+country].shape[0], df["daily "+country].shape[0])
+    y = df["daily "+country]
+    popt, pcov = curve_fit(gauss, x, y, [df["daily "+country].max(),df["daily "+country].median(),1000])
+    print(popt)
+    print("covariance matrix")
+    print(pcov)
+    plt.plot(df["daily "+country], '.k')
+    x = np.linspace(0, df["daily "+country].shape[0]*2 , df["daily "+country].shape[0]*2)
+    perr=np.sqrt(np.diag(pcov)) #standard errors
+    plt.plot(x,gauss(x, *popt+perr), 'g--')
+    plt.plot(x,gauss(x, *popt-perr), 'g--')
+    plt.plot(x, gauss(x, *popt), 'r-',label='fit: a=%5.3f, x0=%5.3f, sigma=%5.3f' % tuple(popt))
+    plt.xlim([0,df["daily "+country].shape[0]*2])
 
 def plot_daily_vs_total(df, country, interval):
     daily_column = np.append([0], df[country].iloc[0:-1])
