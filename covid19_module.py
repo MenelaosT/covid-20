@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, leastsq
+import seaborn as sns
+sns.set_style('whitegrid')
 
 def preprocess_frame(df):
     df = df.groupby(by='Country/Region', as_index=False).agg('sum')
@@ -64,6 +66,35 @@ def fit_cases_data(country, df):
     perr=np.sqrt(np.diag(pcov)) #standard errors
     plt.plot(x,func(x, *popt+perr), 'g--')
     plt.plot(x,func(x, *popt-perr), 'g--')
+
+    plt.xlabel('days since first case')
+    plt.ylabel('number of confirmed cases')
+    plt.legend()
+    #plt.yscale('log')
+    plt.show()
+
+def sigmoid(x, x0, k, a, c):
+    return (a / (1 + np.exp(-k*(x-x0)))) + c
+
+def fit_cases_data_sigmoid(country, df):
+    firstday = 0
+    lastday = df[country].dropna().shape[0]
+
+    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
+    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
+
+    plt.plot(xdata, ydata, 'bo', label='data')
+
+    popt, pcov = curve_fit(sigmoid, xdata, ydata, [5.0, 1.0, -1e4, 1e4])
+    print(popt)
+    print("covariance matrix")
+    print(pcov)
+    x = np.linspace(firstday, lastday+10 , 100)
+    plt.plot(x, sigmoid(x, *popt), 'r-',label='fit: x0=%5.3f, k=%5.3f, a=%5.3f, c=%5.3f' % tuple(popt))
+
+    perr=np.sqrt(np.diag(pcov)) #standard errors
+    #plt.plot(x,sigmoid(x, *popt+perr), 'g')
+    #plt.plot(x,sigmoid(x, *popt-perr), 'g')
 
     plt.xlabel('days since first case')
     plt.ylabel('number of confirmed cases')
