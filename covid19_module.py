@@ -84,3 +84,44 @@ def plot_daily_vs_total(df, country, interval):
     plt.yscale("log")
     plt.xscale("log")
     plt.legend()
+
+
+def top_countries(df):
+    df_grouped = df.groupby(by='Country/Region', as_index=False).agg('sum')
+    top_countries = df_grouped.nlargest(10, df.columns[-1])['Country/Region']
+    return top_countries
+
+def print_mortality_rates(df_cases, df_deaths, top_countries):
+    print ("Mortality rates")
+    print ("---------------")
+    for country in top_countries:
+        print (country, ": ", round(float(df_deaths[country].iloc[-1])/float(df_cases[country].iloc[-1])*100, 3), "%")
+
+
+def print_percentage_infected(df, df_population, top_countries):
+    print ("\nPopulation percentage infected")
+    print ("--------------------------------")
+    for country in top_countries:
+        country_pop = country
+        if country == "US":
+            country_pop = "United States"
+        if country == "Iran":
+            country_pop = "Iran, Islamic Rep."
+        if country == "Korea, South":
+            country_pop = "Korea, Rep."
+        print (country,
+        ": ", round(float(df[country].iloc[-1])/float(df_population[df_population["Country Name"]==country_pop]["2018"])*100, 3), "%")
+
+
+def print_permil_deaths(df, df_population, top_countries):
+    print ("\nPopulation permil dead")
+    print ("------------------------")
+    for country in top_countries:
+        country_pop = country
+        if country == "US":
+            country_pop = "United States"
+        if country == "Iran":
+            country_pop = "Iran, Islamic Rep."
+        if country == "Korea, South":
+            country_pop = "Korea, Rep."
+        print (country, ": ", round(float(df[country].iloc[-1])/float(df_population[df_population["Country Name"]==country_pop]["2018"])*1000, 5), "permil")
