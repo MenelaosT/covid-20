@@ -28,7 +28,6 @@ def shift_to_day_zero(df, df_reference):
 
 def plot_confirmed_cases(df, countries):
     plt.plot(df['Day'], df['Greece'], label='Greece')
-    #sns.lineplot(df['Day'], df['notChina'], label='notChina')
     for country in countries:
         plt.plot(df['Day'], df[country], label=country)
     plt.xlabel('Days since first confirmed case')
@@ -44,7 +43,7 @@ def plot_case_death_recovery(country, df_cases, df_deaths, df_recoveries):
     plt.yscale("log")
     plt.legend()
 
-def func(x, a, b, c):
+def exponential(x, a, b, c):
     return a * np.exp(b * x) + c
 
 def fit_cases_data(country, df):
@@ -56,16 +55,16 @@ def fit_cases_data(country, df):
 
     plt.plot(xdata, ydata, 'bo', label='data')
 
-    popt, pcov = curve_fit(func, xdata, ydata, [0.1,0.1,0.1], bounds=[[-100, -100, 0],[100, 100, 100]])
+    popt, pcov = curve_fit(exponential, xdata, ydata, [0.1,0.1,0.1], bounds=[[-100, -100, 0],[100, 100, 100]])
     print(popt)
     print("covariance matrix")
     print(pcov)
     x = np.linspace(firstday, lastday+5 , 100)
-    plt.plot(x, func(x, *popt), 'r-',label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
+    plt.plot(x, exponential(x, *popt), 'r-',label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
 
     perr=np.sqrt(np.diag(pcov)) #standard errors
-    plt.plot(x,func(x, *popt+perr), 'g--')
-    plt.plot(x,func(x, *popt-perr), 'g--')
+    plt.plot(x,exponential(x, *popt+perr), 'g--')
+    plt.plot(x,exponential(x, *popt-perr), 'g--')
 
     plt.xlabel('days since first case')
     plt.ylabel('number of confirmed cases')
