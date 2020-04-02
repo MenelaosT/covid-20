@@ -113,9 +113,9 @@ def add_daily_entries(df):
     return df_daily_entries
 
 def fit_normal(df, country):
-    x = np.linspace(0, df["daily "+country].shape[0], df["daily "+country].shape[0])
-    y = df["daily "+country]
-    popt, pcov = curve_fit(gauss, x, y, [df["daily "+country].max(),df["daily "+country].median(),1000])
+    x = np.linspace(0, df["daily "+country].dropna().shape[0], df["daily "+country].dropna().shape[0])
+    y = df["daily "+country].dropna()
+    popt, pcov = curve_fit(gauss, x, y, [df["daily "+country].max(),100,10])
     print(popt)
     print("covariance matrix")
     print(pcov)
