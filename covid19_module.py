@@ -160,10 +160,12 @@ def top_countries(df):
     return top_countries
 
 def print_mortality_rates(df_cases, df_deaths, top_countries):
-    print ("Mortality rates")
-    print ("---------------")
+    print ("Mortality rates for the countries with the highest number of deaths")
+    print ("-------------------------------------------------------------------")
     for country in top_countries:
-        print (country, ": ", round(float(df_deaths[country].iloc[-1])/float(df_cases[country].iloc[-1])*100, 3), "%")
+        print (country,
+        "(",df_deaths[country].dropna().iloc[-1], " deaths ): ",
+        round(float(df_deaths[country].dropna().iloc[-1])/float(df_cases[country].dropna().iloc[-1])*100, 1), "%")
 
 
 def print_percentage_infected(df, df_population, top_countries):
