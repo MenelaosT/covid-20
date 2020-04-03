@@ -35,10 +35,10 @@ def set_deaths_labels():
     plt.ylabel('Number of deaths')
 
 def plot_growth(df, countries, case):
-    plt.figure(figsize=(10,5))
-    plt.plot(df['Day'], df['Greece'], label='Greece')
+    plt.figure(figsize=(9,5))
     for country in countries:
         plt.plot(df['Day'], df[country], label=country)
+    plt.plot(df['Day'], df['Greece'], label='Greece')
     if case == "confirmed":
         set_cases_labels()
     elif case == "deaths":
