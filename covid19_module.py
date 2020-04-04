@@ -77,6 +77,13 @@ def gauss(x, a, x0, sigma):
     return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
 
 
+def R2(y, y_fit):
+    res = y - y_fit
+    ss_res = np.sum(res**2)
+    ss_tot = np.sum((y - np.mean(y))**2)
+    return 1 - (ss_res / ss_tot)
+
+
 def fit_exponential(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
@@ -117,10 +124,12 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
     plt.show()
     print("---Exponential fit---\n")
     print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
+    print("R^2 = ", R2(ydata, exponential(xdata, *exp_popt)), "\n")
     print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
     print("\ncovariance matrix:\n", np.array_str(exp_pcov, precision=3))
     print("\n---Logistic fit---\n")
     print("chi^2 = ", chisquare(ydata, logistic(xdata, *log_popt))[0], "\n")
+    print("R^2 = ", R2(ydata, logistic(xdata, *log_popt)), "\n")
     print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
           tuple(log_popt))
     print("\ncovariance matrix:\n", np.array_str(log_pcov, precision=3), "\n")
