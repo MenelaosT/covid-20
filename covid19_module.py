@@ -89,6 +89,9 @@ def fit_cases_data(country, df):
 def sigmoid(x, x0, k, a, c):
     return (a / (1 + np.exp(-k*(x-x0)))) + c
 
+def logistic(x, a, b, c, d, e):
+    return a/(1+b*np.exp(-c*(x-d))) + e
+
 def gauss(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
@@ -107,9 +110,28 @@ def fit_cases_data_sigmoid(country, df):
     x = np.linspace(firstday, lastday+10 , 100)
     plt.plot(x, sigmoid(x, *popt), 'r-',label='fit: x0=%5.3f, k=%5.3f, a=%5.3f, c=%5.3f' % tuple(popt))
 
-    perr=np.sqrt(np.diag(pcov)) #standard errors
-    #plt.plot(x,sigmoid(x, *popt+perr), 'g')
-    #plt.plot(x,sigmoid(x, *popt-perr), 'g')
+    plt.xlabel('days since first case')
+    plt.ylabel('number of confirmed cases')
+    plt.legend()
+    #plt.yscale('log')
+    plt.show()
+    print("covariance matrix")
+    print(pcov)
+
+def fit_logistic(country, df):
+    firstday = 0
+    lastday = df[country].dropna().shape[0]
+
+    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
+    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
+
+    plt.figure(figsize=(10,5))
+    plt.plot(xdata, ydata, 'k.', label='data')
+
+    popt, pcov = curve_fit(logistic, xdata, ydata, maxfev=10000)
+    #print(popt)
+    x = np.linspace(firstday, lastday+10 , 100)
+    plt.plot(x, logistic(x, *popt), 'r-',label='fit: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' % tuple(popt))
 
     plt.xlabel('days since first case')
     plt.ylabel('number of confirmed cases')
