@@ -153,6 +153,28 @@ def plot_daily_vs_total(df, country, interval):
     plt.xscale("log")
     plt.legend()
 
+def plot_top_countries(df, countries, case):
+    plt.figure(figsize=(15,7))
+    countries = countries.tolist()
+    countries.append("Greece")
+
+    data_bar_cases = []
+    for country in countries:
+        data_bar_cases.append(df[country].dropna().iloc[-1])
+    if case == "confirmed":
+        plt.ylabel("Number of confirmed cases")
+    elif case == "deaths":
+        plt.ylabel("Number of deaths")
+
+    x = np.arange(11)
+    bars = plt.bar(x, data_bar_cases)
+    plt.xticks(x, countries, rotation=45)
+    plt.xlabel("Country")
+    plt.gcf().subplots_adjust(bottom=0.3)
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x(), yval + .005, yval)
 
 def top_countries(df):
     df_grouped = df.groupby(by='Country/Region', as_index=False).agg('sum')
