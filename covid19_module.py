@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, leastsq
+from scipy.stats import chisquare
 import seaborn as sns
 sns.set_style('whitegrid')
 
@@ -115,12 +116,14 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
         set_deaths_labels()
     plt.show()
     print("---Exponential fit---\n")
+    print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
     print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
-    print("\ncovariance matrix:\n", exp_pcov)
+    print("\ncovariance matrix:\n", np.array_str(exp_pcov, precision=3))
     print("\n---Logistic fit---\n")
+    print("chi^2 = ", chisquare(ydata, logistic(xdata, *log_popt))[0], "\n")
     print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
           tuple(log_popt))
-    print("\ncovariance matrix:\n", log_pcov, "\n")
+    print("\ncovariance matrix:\n", np.array_str(log_pcov, precision=3), "\n")
 
 
 def add_daily_entries(df):
