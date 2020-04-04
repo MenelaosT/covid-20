@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit, leastsq
 import seaborn as sns
 sns.set_style('whitegrid')
 
+
 def preprocess_frame(df):
     df = df.groupby(by='Country/Region', as_index=False).agg('sum')
     df = df.drop(['Lat', 'Long'], 1)
@@ -12,30 +13,35 @@ def preprocess_frame(df):
     df.rename(columns=df.loc["Country/Region"], inplace=True)
     df.drop(["Country/Region"], inplace=True)
     df["notChina"] = df.drop(['China'], axis=1).sum(axis=1)
-    df['Day'] = np.linspace(0, df.shape[0]-1, df.shape[0], dtype = int)
+    df['Day'] = np.linspace(0, df.shape[0] - 1, df.shape[0], dtype=int)
     df.reset_index(inplace=True)
-    df = df.rename(columns={"index":"Date"})
+    df = df.rename(columns={"index": "Date"})
     cols = list(df.columns)
     cols = [cols[-1]] + cols[:-1]
     df = df[cols]
     return df
 
+
 def shift_to_day_zero(df, df_reference):
     for key in df.columns:
-        if key!= 'Date' and key!='Day' :
-            if df_reference[key].sum()>0:
-                df[key] = df[key].shift(-df_reference['Day'][df_reference[key]>0].iloc[0])
+        if key != 'Date' and key != 'Day':
+            if df_reference[key].sum() > 0:
+                df[key] = df[key].shift(-df_reference['Day']
+                                        [df_reference[key] > 0].iloc[0])
+
 
 def set_cases_labels():
     plt.xlabel('Days since first confirmed case', fontsize="x-large")
     plt.ylabel('Confirmed cases', fontsize="x-large")
 
+
 def set_deaths_labels():
     plt.xlabel('Days since first death', fontsize="x-large")
     plt.ylabel('Number of deaths', fontsize="x-large")
 
+
 def plot_growth(df, countries, case):
-    plt.figure(figsize=(15,7))
+    plt.figure(figsize=(15, 7))
     for country in countries:
         plt.plot(df['Day'], df[country], label=country)
     plt.plot(df['Day'], df['Greece'], label='Greece')
@@ -47,63 +53,74 @@ def plot_growth(df, countries, case):
     plt.legend(fontsize="x-large")
     plt.show()
 
+
 def plot_case_death_recovery(country, df_cases, df_deaths, df_recoveries):
-    plt.plot(df_cases['Day'], df_cases[country], label=country+' cases')
-    plt.plot(df_recoveries['Day'], df_recoveries[country], label=country+' recovered')
-    plt.plot(df_deaths['Day'], df_deaths[country], label=country+' deaths')
+    plt.plot(df_cases['Day'], df_cases[country], label=country + ' cases')
+    plt.plot(df_recoveries['Day'], df_recoveries[country],
+             label=country + ' recovered')
+    plt.plot(df_deaths['Day'], df_deaths[country], label=country + ' deaths')
     plt.ylabel('entries')
     plt.yscale("log")
     plt.legend()
 
+
 def exponential(x, a, b, c):
     return a * np.exp(b * x) + c
+
+
+def logistic(x, a, b, c, d, e):
+    return a / (1 + b * np.exp(-c * (x - d))) + e
+
+
+def gauss(x, a, x0, sigma):
+    return a * np.exp(-(x - x0)**2 / (2 * sigma**2))
+
 
 def fit_exponential(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
-    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
-    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
-    popt, pcov = curve_fit(exponential, xdata, ydata, [0.1,0.1,0.1], bounds=([0,0,0],[1000,1,1000]), maxfev=10000)
+    xdata = df['Day'][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    ydata = df[country][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    popt, pcov = curve_fit(exponential, xdata, ydata, [0.1, 0.1, 0.1], bounds=(
+        [0, 0, -1e2], [1e3, 1, 1e3]), maxfev=1e5)
     return popt, pcov
 
-def logistic(x, a, b, c, d, e):
-    return a/(1+b*np.exp(-c*(x-d))) + e
-
-def gauss(x, a, x0, sigma):
-    return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
 def fit_logistic(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
-    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
-    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
-    popt, pcov = curve_fit(logistic, xdata, ydata, maxfev=100000)
-    x = np.linspace(firstday, lastday+10 , 100)
+    xdata = df['Day'][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    ydata = df[country][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    popt, pcov = curve_fit(logistic, xdata, ydata, bounds=(
+        [0, 0, 0, -1e2, 0], [1e6, 1e5, 1, 1e2, 1e2]), maxfev=1e6)
+    x = np.linspace(firstday, lastday + 10, 100)
     return popt, pcov
 
+
 def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
-    print("***",country,"***")
-    plt.figure(figsize=(10,5))
+    print("***", country, "***")
+    plt.figure(figsize=(10, 5))
     firstday = 0
     lastday = df[country].dropna().shape[0]
-    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
-    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
-    x = np.linspace(firstday, lastday+5 , 100)
+    xdata = df['Day'][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    ydata = df[country][(df['Day'] >= firstday) & (df['Day'] < lastday)]
+    x = np.linspace(firstday, lastday + 5, 100)
     plt.plot(xdata, ydata, 'k.', label='data')
-    plt.plot(x, exponential(x, *exp_popt), 'r-',label="Exponential fit")
-    plt.plot(x, logistic(x, *log_popt), 'b-',label='Logistic fit')
+    plt.plot(x, exponential(x, *exp_popt), 'r-', label="Exponential fit")
+    plt.plot(x, logistic(x, *log_popt), 'b-', label='Logistic fit')
     plt.legend()
     if case == "confirmed":
         set_cases_labels()
     elif case == "deaths":
         set_deaths_labels()
     plt.show()
-    #print("---Exponential fit---\n")
-    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
-    #print("\ncovariance matrix:\n", exp_pcov)
-    #print("\n---Logistic fit---\n")
-    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' % tuple(log_popt))
-    #print("\ncovariance matrix:\n", log_pcov)
+    print("---Exponential fit---\n")
+    print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
+    print("\ncovariance matrix:\n", exp_pcov)
+    print("\n---Logistic fit---\n")
+    print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
+          tuple(log_popt))
+    print("\ncovariance matrix:\n", log_pcov, "\n")
 
 
 def add_daily_entries(df):
@@ -111,31 +128,37 @@ def add_daily_entries(df):
     for country in df.columns:
         if country != "Date" and country != "Day":
             daily_column = np.append([0], df[country].iloc[0:-1])
-            df_daily_entries["daily "+country] = df[country]-daily_column
+            df_daily_entries["daily " + country] = df[country] - daily_column
     return df_daily_entries
 
+
 def fit_normal(df, country):
-    x = np.linspace(0, df["daily "+country].dropna().shape[0], df["daily "+country].dropna().shape[0])
-    y = df["daily "+country].dropna()
-    popt, pcov = curve_fit(gauss, x, y, [df["daily "+country].max(),100,10])
+    x = np.linspace(0, df["daily " + country].dropna().shape[0],
+                    df["daily " + country].dropna().shape[0])
+    y = df["daily " + country].dropna()
+    popt, pcov = curve_fit(
+        gauss, x, y, [df["daily " + country].max(), 100, 10])
     print(popt)
     print("covariance matrix")
     print(pcov)
-    plt.plot(df["daily "+country], '.k')
-    x = np.linspace(0, df["daily "+country].shape[0]*2 , df["daily "+country].shape[0]*2)
-    perr=np.sqrt(np.diag(pcov)) #standard errors
-    plt.plot(x,gauss(x, *popt+perr), 'g--')
-    plt.plot(x,gauss(x, *popt-perr), 'g--')
-    plt.plot(x, gauss(x, *popt), 'r-',label='fit: a=%5.3f, x0=%5.3f, sigma=%5.3f' % tuple(popt))
-    plt.xlim([0,df["daily "+country].shape[0]*2])
+    plt.plot(df["daily " + country], '.k')
+    x = np.linspace(0, df["daily " + country].shape[0] *
+                    2, df["daily " + country].shape[0] * 2)
+    perr = np.sqrt(np.diag(pcov))  # standard errors
+    plt.plot(x, gauss(x, *popt + perr), 'g--')
+    plt.plot(x, gauss(x, *popt - perr), 'g--')
+    plt.plot(x, gauss(x, *popt), 'r-',
+             label='fit: a=%5.3f, x0=%5.3f, sigma=%5.3f' % tuple(popt))
+    plt.xlim([0, df["daily " + country].shape[0] * 2])
+
 
 def plot_daily_vs_total(df, country, interval):
     daily_column = np.append([0], df[country].iloc[0:-1])
-    df["daily"] = df[country]-daily_column
-    x,y = [], []
-    for i in range(interval, df[country].shape[0],interval):
-        x.append(df[country].iloc[i-1])
-        y.append(df["daily"].iloc[i-interval:i].sum())
+    df["daily"] = df[country] - daily_column
+    x, y = [], []
+    for i in range(interval, df[country].shape[0], interval):
+        x.append(df[country].iloc[i - 1])
+        y.append(df["daily"].iloc[i - interval:i].sum())
     plt.plot(x, y, ".-", label=country)
     plt.xlabel("number of total cases")
     plt.ylabel("number of daily cases")
@@ -143,8 +166,9 @@ def plot_daily_vs_total(df, country, interval):
     plt.xscale("log")
     plt.legend()
 
+
 def plot_top_countries(df, countries, case):
-    plt.figure(figsize=(15,7))
+    plt.figure(figsize=(15, 7))
     countries = countries.tolist()
     countries.append("Greece")
 
@@ -166,23 +190,25 @@ def plot_top_countries(df, countries, case):
         yval = bar.get_height()
         plt.text(bar.get_x(), yval + .005, yval)
 
+
 def top_countries(df):
     df_grouped = df.groupby(by='Country/Region', as_index=False).agg('sum')
     top_countries = df_grouped.nlargest(10, df.columns[-1])['Country/Region']
     return top_countries
 
+
 def print_mortality_rates(df_cases, df_deaths, top_countries):
-    print ("Mortality rates for the countries with the highest number of deaths")
-    print ("-------------------------------------------------------------------")
+    print("Mortality rates for the countries with the highest number of deaths")
+    print("-------------------------------------------------------------------")
     for country in top_countries:
-        print (country,
-        "(",df_deaths[country].dropna().iloc[-1], " deaths ): ",
-        round(float(df_deaths[country].dropna().iloc[-1])/float(df_cases[country].dropna().iloc[-1])*100, 1), "%")
+        print(country,
+              "(", df_deaths[country].dropna().iloc[-1], " deaths ): ",
+              round(float(df_deaths[country].dropna().iloc[-1]) / float(df_cases[country].dropna().iloc[-1]) * 100, 1), "%")
 
 
 def print_percentage_infected(df, df_population, top_countries):
-    print ("\nPopulation percentage infected")
-    print ("--------------------------------")
+    print("\nPopulation percentage infected")
+    print("--------------------------------")
     for country in top_countries:
         country_pop = country
         if country == "US":
@@ -191,13 +217,13 @@ def print_percentage_infected(df, df_population, top_countries):
             country_pop = "Iran, Islamic Rep."
         if country == "Korea, South":
             country_pop = "Korea, Rep."
-        print (country,
-        ": ", round(float(df[country].iloc[-1])/float(df_population[df_population["Country Name"]==country_pop]["2018"])*100, 3), "%")
+        print(country,
+              ": ", round(float(df[country].iloc[-1]) / float(df_population[df_population["Country Name"] == country_pop]["2018"]) * 100, 3), "%")
 
 
 def print_permil_deaths(df, df_population, top_countries):
-    print ("\nPopulation permil dead")
-    print ("------------------------")
+    print("\nPopulation permil dead")
+    print("------------------------")
     for country in top_countries:
         country_pop = country
         if country == "US":
@@ -206,4 +232,5 @@ def print_permil_deaths(df, df_population, top_countries):
             country_pop = "Iran, Islamic Rep."
         if country == "Korea, South":
             country_pop = "Korea, Rep."
-        print (country, ": ", round(float(df[country].iloc[-1])/float(df_population[df_population["Country Name"]==country_pop]["2018"])*1000, 5), "permil")
+        print(country, ": ", round(float(df[country].iloc[-1]) / float(
+            df_population[df_population["Country Name"] == country_pop]["2018"]) * 1000, 5), "permil")
