@@ -27,15 +27,15 @@ def shift_to_day_zero(df, df_reference):
                 df[key] = df[key].shift(-df_reference['Day'][df_reference[key]>0].iloc[0])
 
 def set_cases_labels():
-    plt.xlabel('Days since first confirmed case')
-    plt.ylabel('Confirmed cases')
+    plt.xlabel('Days since first confirmed case', fontsize="x-large")
+    plt.ylabel('Confirmed cases', fontsize="x-large")
 
 def set_deaths_labels():
-    plt.xlabel('Days since first death')
-    plt.ylabel('Number of deaths')
+    plt.xlabel('Days since first death', fontsize="x-large")
+    plt.ylabel('Number of deaths', fontsize="x-large")
 
 def plot_growth(df, countries, case):
-    plt.figure(figsize=(9,5))
+    plt.figure(figsize=(15,7))
     for country in countries:
         plt.plot(df['Day'], df[country], label=country)
     plt.plot(df['Day'], df['Greece'], label='Greece')
@@ -44,7 +44,7 @@ def plot_growth(df, countries, case):
     elif case == "deaths":
         set_deaths_labels()
     plt.yscale("log")
-    plt.legend()
+    plt.legend(fontsize="x-large")
     plt.show()
 
 def plot_case_death_recovery(country, df_cases, df_deaths, df_recoveries):
