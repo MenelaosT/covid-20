@@ -116,6 +116,16 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
     plt.plot(xdata, ydata, 'k.', label='data')
     plt.plot(x, exponential(x, *exp_popt), 'r-', label="Exponential fit")
     plt.plot(x, logistic(x, *log_popt), 'b-', label='Logistic fit')
+    exp_perr = np.sqrt(np.diag(exp_pcov))
+    exp_popt_up = exp_popt + 1 * exp_perr
+    exp_popt_dw = exp_popt - 1 * exp_perr
+    plt.fill_between(x, exponential(x, *exp_popt_up), exponential(x,
+                                                                  *exp_popt_dw), alpha=.25, label="1-sigma interval exponential")
+    log_perr = np.sqrt(np.diag(log_pcov))
+    log_popt_up = log_popt + 1 * log_perr
+    log_popt_dw = log_popt - 1 * log_perr
+    plt.fill_between(x, logistic(x, *log_popt_up), logistic(x,
+                                                            *log_popt_dw), alpha=.25, label="1-sigma interval logistic")
     plt.legend()
     if case == "confirmed":
         set_cases_labels()
