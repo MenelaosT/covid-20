@@ -58,33 +58,13 @@ def plot_case_death_recovery(country, df_cases, df_deaths, df_recoveries):
 def exponential(x, a, b, c):
     return a * np.exp(b * x) + c
 
-def fit_cases_data(country, df):
+def fit_exponential(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
-
     xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
     ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
-
-    plt.figure(figsize=(10,5))
-    plt.plot(xdata, ydata, 'k.', label='data')
-
     popt, pcov = curve_fit(exponential, xdata, ydata, [0.1,0.1,0.1], bounds=([0,0,0],[1000,1,1000]), maxfev=10000)
-    print("***",country,"***")
-    #print(popt)
-    x = np.linspace(firstday, lastday+5 , 100)
-    plt.plot(x, exponential(x, *popt), 'r-',label='fit: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(popt))
-
-    #perr=np.sqrt(np.diag(pcov)) #standard errors
-    #plt.plot(x,exponential(x, *popt+perr), 'g--')
-    #plt.plot(x,exponential(x, *popt-perr), 'g--')
-
-    plt.xlabel('days since first case')
-    plt.ylabel('number of confirmed cases')
-    plt.legend()
-    #plt.yscale('log')
-    plt.show()
-    print("Covariance matrix:")
-    print(pcov)
+    return popt, pcov
 
 def sigmoid(x, x0, k, a, c):
     return (a / (1 + np.exp(-k*(x-x0)))) + c
@@ -106,40 +86,50 @@ def fit_cases_data_sigmoid(country, df):
     plt.plot(xdata, ydata, 'k.', label='data')
 
     popt, pcov = curve_fit(sigmoid, xdata, ydata, [5.0, 1.0, -1e4, 1e4])
-    #print(popt)
     x = np.linspace(firstday, lastday+10 , 100)
-    plt.plot(x, sigmoid(x, *popt), 'r-',label='fit: x0=%5.3f, k=%5.3f, a=%5.3f, c=%5.3f' % tuple(popt))
+    plt.plot(x, sigmoid(x, *popt), 'r-',label='Sigmoid fit')
 
     plt.xlabel('days since first case')
     plt.ylabel('number of confirmed cases')
     plt.legend()
-    #plt.yscale('log')
     plt.show()
+    print('fit parametes: x0=%5.3f, k=%5.3f, a=%5.3f, c=%5.3f' % tuple(popt))
     print("covariance matrix")
     print(pcov)
 
 def fit_logistic(country, df):
     firstday = 0
     lastday = df[country].dropna().shape[0]
-
     xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
     ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
-
-    plt.figure(figsize=(10,5))
-    plt.plot(xdata, ydata, 'k.', label='data')
-
-    popt, pcov = curve_fit(logistic, xdata, ydata, maxfev=10000)
-    #print(popt)
+    popt, pcov = curve_fit(logistic, xdata, ydata, maxfev=100000)
     x = np.linspace(firstday, lastday+10 , 100)
-    plt.plot(x, logistic(x, *popt), 'r-',label='fit: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' % tuple(popt))
+    return popt, pcov
 
-    plt.xlabel('days since first case')
-    plt.ylabel('number of confirmed cases')
+def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
+    print("***",country,"***")
+    plt.figure(figsize=(10,5))
+    firstday = 0
+    lastday = df[country].dropna().shape[0]
+    xdata = df['Day'][(df['Day']>=firstday) & (df['Day']<lastday)]
+    ydata = df[country][(df['Day']>=firstday) & (df['Day']<lastday)]
+    x = np.linspace(firstday, lastday+5 , 100)
+    plt.plot(xdata, ydata, 'k.', label='data')
+    plt.plot(x, logistic(x, *log_popt), 'b-',label='Logistic fit')
+    plt.plot(x, exponential(x, *exp_popt), 'r-',label="Exponential fit")
     plt.legend()
-    #plt.yscale('log')
+    if case == "confirmed":
+        set_cases_labels()
+    elif case == "deaths":
+        set_deaths_labels()
     plt.show()
-    print("covariance matrix")
-    print(pcov)
+    #print("---Exponential fit---\n")
+    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
+    #print("\ncovariance matrix:\n", exp_pcov)
+    #print("\n---Logistic fit---\n")
+    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' % tuple(log_popt))
+    #print("\ncovariance matrix:\n", log_pcov)
+
 
 def add_daily_entries(df):
     df_daily_entries = df.copy()
