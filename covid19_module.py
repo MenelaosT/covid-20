@@ -81,18 +81,31 @@ def R2(y, y_fit):
     res = y - y_fit
     ss_res = np.sum(res**2)
     ss_tot = np.sum((y - np.mean(y))**2)
+    #print("res",res,"ss_res", ss_res, "ss_tot",ss_tot)
+    #print("y", y, "np.mean(y)", np.mean(y))
     return 1 - (ss_res / ss_tot)
 
 
-def fit_exponential(country, df):
-    firstday = 0
-    lastday = df[country].dropna().shape[0]
+def fit_exponential(country, df, interval):
+    firstday = interval[0]
+    #lastday = df[country].dropna().shape[0]
+    lastday = interval[1]
     xdata = df['Day'][(df['Day'] >= firstday) & (df['Day'] < lastday)]
     ydata = df[country][(df['Day'] >= firstday) & (df['Day'] < lastday)]
     popt, pcov = curve_fit(exponential, xdata, ydata, [0.1, 0.1, 0.1], bounds=(
         [0, 0, -1e2], [1e3, 1, 1e3]), maxfev=1e5)
-    return popt, pcov
+    #print("ydata", ydata, "exponential(xdata, *popt)", exponential(xdata, *popt))
+    Rsq = R2(ydata, exponential(xdata, *popt))
+    return popt, pcov, Rsq
 
+def index_of_max_R2(df, country):
+    R2_values = []
+    start = 15
+    for i in range(start, df[country].dropna().shape[0]):
+        R2 = fit_exponential(country, df, [0,i])[2]
+        R2_values.append(R2)
+    print(R2_values)
+    return start+R2_values.index(max(R2_values))
 
 def fit_logistic(country, df):
     firstday = 0
@@ -121,6 +134,7 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
         set_cases_labels()
     elif case == "deaths":
         set_deaths_labels()
+    plt.ylim((-20,2*ydata.max()))
     plt.show()
     print("---Exponential fit---\n")
     print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
