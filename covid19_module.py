@@ -129,7 +129,7 @@ def inflection_point(x, y):
 
 
 def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_idx, case):
-    print("***", country, "***")
+    print("\n***", country, "***")
     plt.figure(figsize=(10, 5))
     firstday = 0
     lastday = df[country].dropna().shape[0]
@@ -159,6 +159,7 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_
     elif case == "deaths":
         set_deaths_labels()
     plt.ylim(-ydata.max() / 10., 2 * ydata.max())
+    plt.title(country, loc='center')
     plt.show()
     print("---Exponential fit---\n")
     #print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
