@@ -5,7 +5,8 @@ from scipy.optimize import curve_fit, leastsq
 from scipy.stats import chisquare
 import seaborn as sns
 sns.set_style('whitegrid')
-
+import matplotlib as mpl
+mpl.rcParams['figure.dpi']= 150
 
 def preprocess_frame(df):
     df = df.groupby(by='Country/Region', as_index=False).agg('sum')
