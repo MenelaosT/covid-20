@@ -1,12 +1,15 @@
+import matplotlib as mpl
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, leastsq
 from scipy.stats import chisquare
+import uncertainties as unc
+import uncertainties.unumpy as unp
 import seaborn as sns
 sns.set_style('whitegrid')
-import matplotlib as mpl
-mpl.rcParams['figure.dpi']= 150
+mpl.rcParams['figure.dpi'] = 150
+
 
 def preprocess_frame(df):
     df = df.groupby(by='Country/Region', as_index=False).agg('sum')
@@ -136,18 +139,20 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_
     plt.plot(xdata, ydata, 'k.', label='data')
     plt.plot(x, exponential(x, *exp_popt), 'r-', label="Exponential fit")
     plt.plot(x, logistic(x, *log_popt), 'b-', label='Logistic fit')
-    exp_perr = np.sqrt(np.diag(exp_pcov))
-    exp_popt_up = exp_popt + 1 * exp_perr
-    exp_popt_dw = exp_popt - 1 * exp_perr
-    plt.fill_between(x, exponential(x, *exp_popt_up), exponential(x,
-                                                                  *exp_popt_dw), alpha=.25, label="1-sigma interval exponential")
-    log_perr = np.sqrt(np.diag(log_pcov))
-    log_popt_up = log_popt + 1 * log_perr
-    log_popt_dw = log_popt - 1 * log_perr
-    plt.fill_between(x, logistic(x, *log_popt_up), logistic(x,
-                                                            *log_popt_dw), alpha=.25, label="1-sigma interval logistic")
+    ae, be, ce = unc.correlated_values(exp_popt, exp_pcov)
+    py = ae * unp.exp(be * x) + ce
+    nom = unp.nominal_values(py)
+    std = unp.std_devs(py)
+    plt.fill_between(x, nom + 2 * std, nom - 2 *
+                     std, facecolor="red", alpha=.2)
+    al, bl, cl, dl, el = unc.correlated_values(log_popt, log_pcov)
+    py = al / (1 + bl * unp.exp(-cl * (x - dl))) + el
+    nom = unp.nominal_values(py)
+    std = unp.std_devs(py)
+    plt.fill_between(x, nom + 2 * std, nom - 2 *
+                     std, facecolor="blue", alpha=.2)
     plt.plot(x[inflection_p_idx], logistic(x, *log_popt)
-             [inflection_p_idx], 'om', label='inflection point')
+             [inflection_p_idx], 'oy', label='inflection point')
     plt.legend()
     if case == "confirmed":
         set_cases_labels()
@@ -156,16 +161,18 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_
     plt.ylim(-ydata.max() / 10., 2 * ydata.max())
     plt.show()
     print("---Exponential fit---\n")
-    print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
+    #print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
     print("R^2 = ", R2(ydata, exponential(xdata, *exp_popt)), "\n")
-    print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
-    print("\ncovariance matrix:\n", np.array_str(exp_pcov, precision=3))
+    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
+    print('fit parametes: a=', ae, 'b=', be, 'c=', ce)
+    #print("\ncovariance matrix:\n", np.array_str(exp_pcov, precision=3))
     print("\n---Logistic fit---\n")
-    print("chi^2 = ", chisquare(ydata, logistic(xdata, *log_popt))[0], "\n")
+    #print("chi^2 = ", chisquare(ydata, logistic(xdata, *log_popt))[0], "\n")
     print("R^2 = ", R2(ydata, logistic(xdata, *log_popt)), "\n")
-    print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
-          tuple(log_popt))
-    print("\ncovariance matrix:\n", np.array_str(log_pcov, precision=3), "\n")
+    # print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
+    #      tuple(log_popt))
+    print('fit parametes: a=', al, 'b=', bl, 'c=', cl, 'd=', dl, 'e=', el)
+    #print("\ncovariance matrix:\n", np.array_str(log_pcov, precision=3), "\n")
 
 
 def add_daily_entries(df):
