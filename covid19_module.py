@@ -96,6 +96,10 @@ def fit_exponential(country, df, interval):
     popt, pcov = curve_fit(exponential, xdata, ydata, [0.1, 0.1, 0.1], bounds=(
         [0, 0, -1e2], [1e3, 1, 1e3]), maxfev=1e5)
     Rsq = R2(ydata, exponential(xdata, *popt))
+    ae, be, ce = unc.correlated_values(popt, pcov)
+    print("\n---Exponential fit---\n")
+    print("R^2 = ", Rsq, "\n")
+    print('fit parametes: a=', ae, 'b=', be, 'c=', ce)
     return popt, pcov, Rsq
 
 
@@ -119,6 +123,10 @@ def fit_logistic(country, df):
     x = np.linspace(firstday, lastday + 10, 100)
     y = logistic(x, *popt)
     inf_p = inflection_point(x, y)
+    al, bl, cl, dl, el = unc.correlated_values(popt, pcov)
+    print("\n---Logistic fit---\n")
+    print("R^2 = ", R2(ydata, logistic(xdata, *popt)), "\n")
+    print('fit parametes: a=', al, 'b=', bl, 'c=', cl, 'd=', dl, 'e=', el)
     return popt, pcov, inf_p
 
 
@@ -129,7 +137,6 @@ def inflection_point(x, y):
 
 
 def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_idx, case):
-    print("\n***", country, "***")
     plt.figure(figsize=(10, 5))
     firstday = 0
     lastday = df[country].dropna().shape[0]
@@ -161,19 +168,6 @@ def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_
     plt.ylim(-ydata.max() / 10., 2 * ydata.max())
     plt.title(country, loc='center')
     plt.show()
-    print("---Exponential fit---\n")
-    #print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
-    print("R^2 = ", R2(ydata, exponential(xdata, *exp_popt)), "\n")
-    #print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f' % tuple(exp_popt))
-    print('fit parametes: a=', ae, 'b=', be, 'c=', ce)
-    #print("\ncovariance matrix:\n", np.array_str(exp_pcov, precision=3))
-    print("\n---Logistic fit---\n")
-    #print("chi^2 = ", chisquare(ydata, logistic(xdata, *log_popt))[0], "\n")
-    print("R^2 = ", R2(ydata, logistic(xdata, *log_popt)), "\n")
-    # print('fit parametes: a=%5.3f, b=%5.3f, c=%5.3f, d=%5.3f, e=%5.3f' %
-    #      tuple(log_popt))
-    print('fit parametes: a=', al, 'b=', bl, 'c=', cl, 'd=', dl, 'e=', el)
-    #print("\ncovariance matrix:\n", np.array_str(log_pcov, precision=3), "\n")
 
 
 def add_daily_entries(df):
