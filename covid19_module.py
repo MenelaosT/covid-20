@@ -98,14 +98,16 @@ def fit_exponential(country, df, interval):
     Rsq = R2(ydata, exponential(xdata, *popt))
     return popt, pcov, Rsq
 
+
 def index_of_max_R2(df, country):
     R2_values = []
     start = 15
     for i in range(start, df[country].dropna().shape[0]):
-        R2 = fit_exponential(country, df, [0,i])[2]
+        R2 = fit_exponential(country, df, [0, i])[2]
         R2_values.append(R2)
     print(R2_values)
-    return start+R2_values.index(max(R2_values))
+    return start + R2_values.index(max(R2_values))
+
 
 def fit_logistic(country, df):
     firstday = 0
@@ -115,26 +117,36 @@ def fit_logistic(country, df):
     popt, pcov = curve_fit(logistic, xdata, ydata, bounds=(
         [0, 0, 0, -1e2, 0], [1e6, 1e5, 1, 1e2, 1e2]), maxfev=1e6)
     x = np.linspace(firstday, lastday + 10, 100)
-    return popt, pcov
+    y = logistic(x, *popt)
+    inf_p = inflection_point(x, y)
+    return popt, pcov, inf_p
 
 
-def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, case):
+def inflection_point(x, y):
+    dy = np.diff(y)
+    idx_max_dy = np.argmax(dy)
+    return idx_max_dy, x[idx_max_dy]
+
+
+def plot_fits(country, df, exp_popt, exp_pcov, log_popt, log_pcov, inflection_p_idx, case):
     print("***", country, "***")
     plt.figure(figsize=(10, 5))
     firstday = 0
     lastday = df[country].dropna().shape[0]
     xdata = df['Day'][(df['Day'] >= firstday) & (df['Day'] < lastday)]
     ydata = df[country][(df['Day'] >= firstday) & (df['Day'] < lastday)]
-    x = np.linspace(firstday, lastday + 5, 100)
+    x = np.linspace(firstday, lastday + 10, 100)
     plt.plot(xdata, ydata, 'k.', label='data')
     plt.plot(x, exponential(x, *exp_popt), 'r-', label="Exponential fit")
     plt.plot(x, logistic(x, *log_popt), 'b-', label='Logistic fit')
+    plt.plot(x[inflection_p_idx], logistic(x, *log_popt)
+             [inflection_p_idx], 'om', label='inflection point')
     plt.legend()
     if case == "confirmed":
         set_cases_labels()
     elif case == "deaths":
         set_deaths_labels()
-    plt.ylim((-20,2*ydata.max()))
+    plt.ylim(-ydata.max() / 10., 2 * ydata.max())
     plt.show()
     print("---Exponential fit---\n")
     print("chi^2 = ", chisquare(ydata, exponential(xdata, *exp_popt))[0], "\n")
